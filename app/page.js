@@ -96,7 +96,7 @@ export default function Home() {
       alignItems="center"
       gap={2}
       sx={{
-        background: 'linear-gradient(135deg, #f5f5f5, #c2c2c2)', // Gradient background
+        background: 'linear-gradient(135deg, #f5f5f5, #c2c2c2)',
       }}
     >
       <Modal open={open} onClose={handleClose}>
