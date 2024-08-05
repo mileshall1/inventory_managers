@@ -1,9 +1,15 @@
 'use client';
 
+import dynamic from 'next/dynamic';
+import { Box, Modal, Typography, Stack, TextField, Button, Grid } from '@mui/material';
 import { useState, useEffect } from 'react';
 import { firestore } from "@/firebase";
-import { Box, Modal, Typography, Stack, TextField, Button, Grid } from '@mui/material';
 import { collection, query, getDocs, doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
+
+// Dynamically import the client-only component
+const ClientOnlyComponent = dynamic(() => import('../components/ClientOnlyComponent'), {
+  ssr: false
+});
 
 export default function Home() {
   const [inventory, setInventory] = useState([]);
@@ -91,9 +97,6 @@ export default function Home() {
       gap={2}
       sx={{
         background: 'linear-gradient(135deg, #f5f5f5, #c2c2c2)', // Gradient background
-        // Alternatively, use a background image:
-        // background: 'url(/path/to/your/background-image.jpg) no-repeat center center fixed',
-        // backgroundSize: 'cover'
       }}
     >
       <Modal open={open} onClose={handleClose}>
@@ -208,6 +211,8 @@ export default function Home() {
           ))}
         </Stack>
       </Box>
+      {/* Dynamically loaded client-only component */}
+      <ClientOnlyComponent />
     </Box>
   );
 }
