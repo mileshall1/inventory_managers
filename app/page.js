@@ -72,7 +72,7 @@ export default function Home() {
   };
 
   useEffect(() => {
-    updateInventory();
+    window.updateInventory();
   }, []);
 
   useEffect(() => {
