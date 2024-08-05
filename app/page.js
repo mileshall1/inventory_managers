@@ -17,6 +17,18 @@ export default function Home() {
   const [open, setOpen] = useState(false);
   const [itemName, setItemName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isBrowser, setIsBrowser] = useState(false);
+
+  useEffect(() => {
+    // Check if window is defined
+    setIsBrowser(typeof window !== 'undefined');
+  }, []);
+
+  useEffect(() => {
+    if (isBrowser) {
+      updateInventory();
+    }
+  }, [isBrowser]);
 
   const updateInventory = async () => {
     const snapshot = query(collection(firestore, 'inventory'));
@@ -70,10 +82,6 @@ export default function Home() {
     }
     await updateInventory();
   };
-
-  useEffect(() => {
-    window.updateInventory();
-  }, []);
 
   useEffect(() => {
     const lowercasedFilter = searchQuery.toLowerCase();
@@ -212,7 +220,7 @@ export default function Home() {
         </Stack>
       </Box>
       {/* Dynamically loaded client-only component */}
-      <ClientOnlyComponent />
+      {isBrowser && <ClientOnlyComponent />}
     </Box>
   );
 }
