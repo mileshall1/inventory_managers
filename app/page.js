@@ -6,7 +6,7 @@ import { Box, Modal, Typography, Stack, TextField, Button, Grid } from '@mui/mat
 import { firestore } from "@/firebase";
 import { collection, query, getDocs, doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 
-// Dynamically import the client-only component
+// Dynamically import client-only components
 const ClientOnlyComponent = dynamic(() => import('../components/ClientOnlyComponent'), {
   ssr: false
 });
@@ -17,99 +17,101 @@ export default function Home() {
   const [open, setOpen] = useState(false);
   const [itemName, setItemName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // State to check if running in the browser
-  const [isBrowser, setIsBrowser] = useState(false);
 
-  // Set isBrowser to true if running in the browser
+  // Fetch inventory only on the client side
   useEffect(() => {
-    setIsBrowser(typeof window !== 'undefined');
-  }, []);
-
-  // Update inventory if running in the browser
-  useEffect(() => {
-    if (isBrowser) {
+    if (typeof window !== 'undefined') {
       updateInventory();
     }
-  }, [isBrowser]);
+  }, []);
 
-  // Fetch and update inventory
   const updateInventory = async () => {
-    if (isBrowser) {
-      const snapshot = query(collection(firestore, 'inventory'));
-      const docs = await getDocs(snapshot);
-      const inventoryList = [];
-      docs.forEach((doc) => {
-        inventoryList.push({
-          name: doc.id,
-          ...doc.data(),
+    if (typeof window !== 'undefined') {
+      try {
+        const snapshot = query(collection(firestore, 'inventory'));
+        const docs = await getDocs(snapshot);
+        const inventoryList = [];
+        docs.forEach((doc) => {
+          inventoryList.push({
+            name: doc.id,
+            ...doc.data(),
+          });
         });
-      });
-      setInventory(inventoryList);
-      setFilteredInventory(inventoryList);
+        setInventory(inventoryList);
+        setFilteredInventory(inventoryList);
+      } catch (error) {
+        console.error("Failed to update inventory:", error);
+      }
     }
   };
 
-  // Add item to inventory
   const addItem = async (item) => {
-    if (isBrowser) {
-      const docRef = doc(collection(firestore, 'inventory'), item);
-      const docSnap = await getDoc(docRef);
+    if (typeof window !== 'undefined') {
+      try {
+        const docRef = doc(collection(firestore, 'inventory'), item);
+        const docSnap = await getDoc(docRef);
 
-      if (docSnap.exists()) {
-        const { quantity } = docSnap.data();
-        await setDoc(docRef, { quantity: quantity + 1 });
-      } else {
-        await setDoc(docRef, { quantity: 1 });
-      }
-      await updateInventory();
-    }
-  };
-
-  // Remove item from inventory
-  const removeItem = async (item) => {
-    if (isBrowser) {
-      const docRef = doc(collection(firestore, 'inventory'), item);
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        const { quantity } = docSnap.data();
-        if (quantity === 1) {
-          await deleteDoc(docRef);
+        if (docSnap.exists()) {
+          const { quantity } = docSnap.data();
+          await setDoc(docRef, { quantity: quantity + 1 });
         } else {
-          await setDoc(docRef, { quantity: quantity - 1 });
+          await setDoc(docRef, { quantity: 1 });
         }
+        await updateInventory();
+      } catch (error) {
+        console.error("Failed to add item:", error);
       }
-      await updateInventory();
     }
   };
 
-  // Increase item quantity
+  const removeItem = async (item) => {
+    if (typeof window !== 'undefined') {
+      try {
+        const docRef = doc(collection(firestore, 'inventory'), item);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const { quantity } = docSnap.data();
+          if (quantity === 1) {
+            await deleteDoc(docRef);
+          } else {
+            await setDoc(docRef, { quantity: quantity - 1 });
+          }
+        }
+        await updateInventory();
+      } catch (error) {
+        console.error("Failed to remove item:", error);
+      }
+    }
+  };
+
   const increaseQuantity = async (item) => {
-    if (isBrowser) {
-      const docRef = doc(collection(firestore, 'inventory'), item);
-      const docSnap = await getDoc(docRef);
+    if (typeof window !== 'undefined') {
+      try {
+        const docRef = doc(collection(firestore, 'inventory'), item);
+        const docSnap = await getDoc(docRef);
 
-      if (docSnap.exists()) {
-        const { quantity } = docSnap.data();
-        await setDoc(docRef, { quantity: quantity + 1 });
+        if (docSnap.exists()) {
+          const { quantity } = docSnap.data();
+          await setDoc(docRef, { quantity: quantity + 1 });
+        }
+        await updateInventory();
+      } catch (error) {
+        console.error("Failed to increase quantity:", error);
       }
-      await updateInventory();
     }
   };
 
-  // Filter inventory based on search query
   useEffect(() => {
-    if (isBrowser) {
+    if (typeof window !== 'undefined') {
       const lowercasedFilter = searchQuery.toLowerCase();
       const filteredData = inventory.filter(item =>
         item.name.toLowerCase().includes(lowercasedFilter)
       );
       setFilteredInventory(filteredData);
     }
-  }, [searchQuery, inventory, isBrowser]);
+  }, [searchQuery, inventory]);
 
-  // Open and close modal handlers
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
@@ -239,7 +241,7 @@ export default function Home() {
         </Stack>
       </Box>
       {/* Dynamically loaded client-only component */}
-      {isBrowser && <ClientOnlyComponent />}
+      <ClientOnlyComponent />
     </Box>
   );
 }
