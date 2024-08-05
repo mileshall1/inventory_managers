@@ -17,80 +17,99 @@ export default function Home() {
   const [open, setOpen] = useState(false);
   const [itemName, setItemName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // State to check if running in the browser
   const [isBrowser, setIsBrowser] = useState(false);
 
+  // Set isBrowser to true if running in the browser
   useEffect(() => {
-    // Check if window is defined
     setIsBrowser(typeof window !== 'undefined');
   }, []);
 
+  // Update inventory if running in the browser
   useEffect(() => {
     if (isBrowser) {
       updateInventory();
     }
   }, [isBrowser]);
 
+  // Fetch and update inventory
   const updateInventory = async () => {
-    const snapshot = query(collection(firestore, 'inventory'));
-    const docs = await getDocs(snapshot);
-    const inventoryList = [];
-    docs.forEach((doc) => {
-      inventoryList.push({
-        name: doc.id,
-        ...doc.data(),
+    if (isBrowser) {
+      const snapshot = query(collection(firestore, 'inventory'));
+      const docs = await getDocs(snapshot);
+      const inventoryList = [];
+      docs.forEach((doc) => {
+        inventoryList.push({
+          name: doc.id,
+          ...doc.data(),
+        });
       });
-    });
-    setInventory(inventoryList);
-    setFilteredInventory(inventoryList);
+      setInventory(inventoryList);
+      setFilteredInventory(inventoryList);
+    }
   };
 
+  // Add item to inventory
   const addItem = async (item) => {
-    const docRef = doc(collection(firestore, 'inventory'), item);
-    const docSnap = await getDoc(docRef);
+    if (isBrowser) {
+      const docRef = doc(collection(firestore, 'inventory'), item);
+      const docSnap = await getDoc(docRef);
 
-    if (docSnap.exists()) {
-      const { quantity } = docSnap.data();
-      await setDoc(docRef, { quantity: quantity + 1 });
-    } else {
-      await setDoc(docRef, { quantity: 1 });
-    }
-    await updateInventory();
-  };
-
-  const removeItem = async (item) => {
-    const docRef = doc(collection(firestore, 'inventory'), item);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      const { quantity } = docSnap.data();
-      if (quantity === 1) {
-        await deleteDoc(docRef);
+      if (docSnap.exists()) {
+        const { quantity } = docSnap.data();
+        await setDoc(docRef, { quantity: quantity + 1 });
       } else {
-        await setDoc(docRef, { quantity: quantity - 1 });
+        await setDoc(docRef, { quantity: 1 });
       }
+      await updateInventory();
     }
-    await updateInventory();
   };
 
+  // Remove item from inventory
+  const removeItem = async (item) => {
+    if (isBrowser) {
+      const docRef = doc(collection(firestore, 'inventory'), item);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const { quantity } = docSnap.data();
+        if (quantity === 1) {
+          await deleteDoc(docRef);
+        } else {
+          await setDoc(docRef, { quantity: quantity - 1 });
+        }
+      }
+      await updateInventory();
+    }
+  };
+
+  // Increase item quantity
   const increaseQuantity = async (item) => {
-    const docRef = doc(collection(firestore, 'inventory'), item);
-    const docSnap = await getDoc(docRef);
+    if (isBrowser) {
+      const docRef = doc(collection(firestore, 'inventory'), item);
+      const docSnap = await getDoc(docRef);
 
-    if (docSnap.exists()) {
-      const { quantity } = docSnap.data();
-      await setDoc(docRef, { quantity: quantity + 1 });
+      if (docSnap.exists()) {
+        const { quantity } = docSnap.data();
+        await setDoc(docRef, { quantity: quantity + 1 });
+      }
+      await updateInventory();
     }
-    await updateInventory();
   };
 
+  // Filter inventory based on search query
   useEffect(() => {
-    const lowercasedFilter = searchQuery.toLowerCase();
-    const filteredData = inventory.filter(item =>
-      item.name.toLowerCase().includes(lowercasedFilter)
-    );
-    setFilteredInventory(filteredData);
-  }, [searchQuery, inventory]);
+    if (isBrowser) {
+      const lowercasedFilter = searchQuery.toLowerCase();
+      const filteredData = inventory.filter(item =>
+        item.name.toLowerCase().includes(lowercasedFilter)
+      );
+      setFilteredInventory(filteredData);
+    }
+  }, [searchQuery, inventory, isBrowser]);
 
+  // Open and close modal handlers
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
