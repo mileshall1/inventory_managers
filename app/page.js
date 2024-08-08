@@ -18,98 +18,86 @@ export default function Home() {
   const [itemName, setItemName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Fetch inventory only on the client side
+  // Fetch inventory on the client side
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      updateInventory();
-    }
+    updateInventory();
   }, []);
 
   const updateInventory = async () => {
-    if (typeof window !== 'undefined') {
-      try {
-        const snapshot = query(collection(firestore, 'inventory'));
-        const docs = await getDocs(snapshot);
-        const inventoryList = [];
-        docs.forEach((doc) => {
-          inventoryList.push({
-            name: doc.id,
-            ...doc.data(),
-          });
+    try {
+      const snapshot = query(collection(firestore, 'inventory'));
+      const docs = await getDocs(snapshot);
+      const inventoryList = [];
+      docs.forEach((doc) => {
+        inventoryList.push({
+          name: doc.id,
+          ...doc.data(),
         });
-        setInventory(inventoryList);
-        setFilteredInventory(inventoryList);
-      } catch (error) {
-        console.error("Failed to update inventory:", error);
-      }
+      });
+      setInventory(inventoryList);
+      setFilteredInventory(inventoryList);
+    } catch (error) {
+      console.error("Failed to update inventory:", error);
     }
   };
 
   const addItem = async (item) => {
-    if (typeof window !== 'undefined') {
-      try {
-        const docRef = doc(collection(firestore, 'inventory'), item);
-        const docSnap = await getDoc(docRef);
+    try {
+      const docRef = doc(collection(firestore, 'inventory'), item);
+      const docSnap = await getDoc(docRef);
 
-        if (docSnap.exists()) {
-          const { quantity } = docSnap.data();
-          await setDoc(docRef, { quantity: quantity + 1 });
-        } else {
-          await setDoc(docRef, { quantity: 1 });
-        }
-        await updateInventory();
-      } catch (error) {
-        console.error("Failed to add item:", error);
+      if (docSnap.exists()) {
+        const { quantity } = docSnap.data();
+        await setDoc(docRef, { quantity: quantity + 1 });
+      } else {
+        await setDoc(docRef, { quantity: 1 });
       }
+      await updateInventory();
+    } catch (error) {
+      console.error("Failed to add item:", error);
     }
   };
 
   const removeItem = async (item) => {
-    if (typeof window !== 'undefined') {
-      try {
-        const docRef = doc(collection(firestore, 'inventory'), item);
-        const docSnap = await getDoc(docRef);
+    try {
+      const docRef = doc(collection(firestore, 'inventory'), item);
+      const docSnap = await getDoc(docRef);
 
-        if (docSnap.exists()) {
-          const { quantity } = docSnap.data();
-          if (quantity === 1) {
-            await deleteDoc(docRef);
-          } else {
-            await setDoc(docRef, { quantity: quantity - 1 });
-          }
+      if (docSnap.exists()) {
+        const { quantity } = docSnap.data();
+        if (quantity === 1) {
+          await deleteDoc(docRef);
+        } else {
+          await setDoc(docRef, { quantity: quantity - 1 });
         }
-        await updateInventory();
-      } catch (error) {
-        console.error("Failed to remove item:", error);
       }
+      await updateInventory();
+    } catch (error) {
+      console.error("Failed to remove item:", error);
     }
   };
 
   const increaseQuantity = async (item) => {
-    if (typeof window !== 'undefined') {
-      try {
-        const docRef = doc(collection(firestore, 'inventory'), item);
-        const docSnap = await getDoc(docRef);
+    try {
+      const docRef = doc(collection(firestore, 'inventory'), item);
+      const docSnap = await getDoc(docRef);
 
-        if (docSnap.exists()) {
-          const { quantity } = docSnap.data();
-          await setDoc(docRef, { quantity: quantity + 1 });
-        }
-        await updateInventory();
-      } catch (error) {
-        console.error("Failed to increase quantity:", error);
+      if (docSnap.exists()) {
+        const { quantity } = docSnap.data();
+        await setDoc(docRef, { quantity: quantity + 1 });
       }
+      await updateInventory();
+    } catch (error) {
+      console.error("Failed to increase quantity:", error);
     }
   };
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const lowercasedFilter = searchQuery.toLowerCase();
-      const filteredData = inventory.filter(item =>
-        item.name.toLowerCase().includes(lowercasedFilter)
-      );
-      setFilteredInventory(filteredData);
-    }
+    const lowercasedFilter = searchQuery.toLowerCase();
+    const filteredData = inventory.filter(item =>
+      item.name.toLowerCase().includes(lowercasedFilter)
+    );
+    setFilteredInventory(filteredData);
   }, [searchQuery, inventory]);
 
   const handleOpen = () => setOpen(true);
