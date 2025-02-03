@@ -1,19 +1,13 @@
-'use client';
-
-import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
-import { Box, Modal, Typography, Stack, TextField, Button, Grid } from '@mui/material';
+import { Box, Modal, Typography, Stack, TextField, Button, Grid, CircularProgress } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { firestore } from "@/firebase";
 import { collection, query, getDocs, doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
-import '@fontsource/poppins'; // Import Poppins font
+import '@fontsource/poppins';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
+import SearchIcon from '@mui/icons-material/Search';
 
-// Dynamically import client-only components
-const ClientOnlyComponent = dynamic(() => import('../components/ClientOnlyComponent'), {
-  ssr: false
-});
-
-// Create a custom theme for consistent styling
 const theme = createTheme({
   palette: {
     primary: {
@@ -49,13 +43,14 @@ export default function Home() {
   const [open, setOpen] = useState(false);
   const [itemName, setItemName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  // Fetch inventory on the client side
   useEffect(() => {
     updateInventory();
   }, []);
 
   const updateInventory = async () => {
+    setLoading(true);
     try {
       const snapshot = query(collection(firestore, 'inventory'));
       const docs = await getDocs(snapshot);
@@ -70,67 +65,10 @@ export default function Home() {
       setFilteredInventory(inventoryList);
     } catch (error) {
       console.error("Failed to update inventory:", error);
+    } finally {
+      setLoading(false);
     }
   };
-
-  const addItem = async (item) => {
-    try {
-      const docRef = doc(collection(firestore, 'inventory'), item);
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        const { quantity } = docSnap.data();
-        await setDoc(docRef, { quantity: quantity + 1 });
-      } else {
-        await setDoc(docRef, { quantity: 1 });
-      }
-      await updateInventory();
-    } catch (error) {
-      console.error("Failed to add item:", error);
-    }
-  };
-
-  const removeItem = async (item) => {
-    try {
-      const docRef = doc(collection(firestore, 'inventory'), item);
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        const { quantity } = docSnap.data();
-        if (quantity === 1) {
-          await deleteDoc(docRef);
-        } else {
-          await setDoc(docRef, { quantity: quantity - 1 });
-        }
-      }
-      await updateInventory();
-    } catch (error) {
-      console.error("Failed to remove item:", error);
-    }
-  };
-
-  const increaseQuantity = async (item) => {
-    try {
-      const docRef = doc(collection(firestore, 'inventory'), item);
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        const { quantity } = docSnap.data();
-        await setDoc(docRef, { quantity: quantity + 1 });
-      }
-      await updateInventory();
-    } catch (error) {
-      console.error("Failed to increase quantity:", error);
-    }
-  };
-
-  useEffect(() => {
-    const lowercasedFilter = searchQuery.toLowerCase();
-    const filteredData = inventory.filter(item =>
-      item.name.toLowerCase().includes(lowercasedFilter)
-    );
-    setFilteredInventory(filteredData);
-  }, [searchQuery, inventory]);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -139,7 +77,7 @@ export default function Home() {
     <ThemeProvider theme={theme}>
       <Box
         width="100vw"
-        height="100vh"
+        minHeight="100vh"
         display="flex"
         flexDirection="column"
         justifyContent="center"
@@ -147,49 +85,13 @@ export default function Home() {
         gap={2}
         sx={{
           background: 'linear-gradient(135deg, #e0e0e0, #ffffff)',
+          padding: 4,
         }}
       >
-        <Modal open={open} onClose={handleClose}>
-          <Box
-            position="absolute"
-            top="50%"
-            left="50%"
-            width={400}
-            bgcolor="white"
-            border="2px solid #000"
-            boxShadow={2}
-            p={4}
-            display="flex"
-            flexDirection="column"
-            gap={3}
-            sx={{
-              transform: 'translate(-50%, -50%)',
-            }}
-          >
-            <Typography variant="h6">Add Item</Typography>
-            <Stack width="100%" direction="row" spacing={2}>
-              <TextField
-                variant="outlined"
-                fullWidth
-                value={itemName}
-                onChange={(e) => setItemName(e.target.value)}
-              />
-              <Button
-                variant="contained"
-                onClick={() => {
-                  addItem(itemName);
-                  setItemName('');
-                  handleClose();
-                }}
-              >
-                Add
-              </Button>
-            </Stack>
-          </Box>
-        </Modal>
         <Button
           variant="contained"
           onClick={handleOpen}
+          startIcon={<AddIcon />}
           sx={{
             backgroundColor: theme.palette.primary.main,
             boxShadow: theme.shadows[1],
@@ -205,53 +107,65 @@ export default function Home() {
           placeholder="Search items"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          sx={{ marginBottom: 2, width: '800px' }}
+          InputProps={{
+            startAdornment: <SearchIcon sx={{ marginRight: 1, color: 'action.active' }} />,
+          }}
+          sx={{ marginBottom: 2, width: '800px', maxWidth: '90%' }}
         />
-        <Box border="1px solid #333" width="800px">
+        <Box
+          width="800px"
+          maxWidth="90%"
+          bgcolor="white"
+          borderRadius={2}
+          boxShadow={theme.shadows[1]}
+        >
           <Box
             height="100px"
             display="flex"
             bgcolor="#00bfa6"
             alignItems="center"
             justifyContent="center"
-            boxShadow={theme.shadows[1]}
+            borderRadius="8px 8px 0 0"
           >
             <Typography variant="h2" color="#ffffff">
               Inventory Items
             </Typography>
           </Box>
           <Stack spacing={2} padding={2}>
-            {filteredInventory.map(({ name, quantity }) => (
-              <Grid
-                container
-                key={name}
-                alignItems="center"
-                justifyContent="space-between"
-                bgcolor="#f0f0f0"
-                padding={2}
-                boxShadow={theme.shadows[1]}
-              >
-                <Grid item xs={4}>
-                  <Typography
-                    variant="h5"
-                    color={theme.palette.text.primary}
-                  >
+            {loading ? (
+              <Box display="flex" justifyContent="center" alignItems="center" height="200px">
+                <CircularProgress />
+              </Box>
+            ) : (
+              filteredInventory.map(({ name, quantity }) => (
+                <Box
+                  key={name}
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  bgcolor="#f0f0f0"
+                  padding={2}
+                  borderRadius={1}
+                  boxShadow={theme.shadows[1]}
+                  sx={{
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                    '&:hover': {
+                      transform: 'translateY(-2px)',
+                      boxShadow: theme.shadows[2],
+                    },
+                  }}
+                >
+                  <Typography variant="h5" color={theme.palette.text.primary}>
                     {name.charAt(0).toUpperCase() + name.slice(1)}
                   </Typography>
-                </Grid>
-                <Grid item xs={2} display="flex" justifyContent="center">
-                  <Typography
-                    variant="h5"
-                    color={theme.palette.text.primary}
-                  >
+                  <Typography variant="h5" color={theme.palette.text.primary}>
                     {quantity}
                   </Typography>
-                </Grid>
-                <Grid item xs={6} display="flex" justifyContent="flex-end">
                   <Stack direction="row" spacing={1}>
                     <Button
                       variant="contained"
                       onClick={() => increaseQuantity(name)}
+                      startIcon={<AddIcon />}
                       sx={{
                         backgroundColor: theme.palette.primary.main,
                         '&:hover': {
@@ -264,6 +178,7 @@ export default function Home() {
                     <Button
                       variant="contained"
                       onClick={() => removeItem(name)}
+                      startIcon={<RemoveIcon />}
                       sx={{
                         backgroundColor: theme.palette.secondary.main,
                         '&:hover': {
@@ -274,12 +189,51 @@ export default function Home() {
                       Remove
                     </Button>
                   </Stack>
-                </Grid>
-              </Grid>
-            ))}
+                </Box>
+              ))
+            )}
           </Stack>
         </Box>
-        <ClientOnlyComponent />
+        <Modal open={open} onClose={handleClose}>
+          <Box
+            position="absolute"
+            top="50%"
+            left="50%"
+            width={400}
+            bgcolor="white"
+            borderRadius={2}
+            boxShadow={24}
+            p={4}
+            display="flex"
+            flexDirection="column"
+            gap={3}
+            sx={{
+              transform: 'translate(-50%, -50%)',
+            }}
+          >
+            <Typography variant="h6">Add Item</Typography>
+            <Stack width="100%" direction="row" spacing={2}>
+              <TextField
+                variant="outlined"
+                fullWidth
+                placeholder="Enter item name"
+                value={itemName}
+                onChange={(e) => setItemName(e.target.value)}
+              />
+              <Button
+                variant="contained"
+                onClick={() => {
+                  addItem(itemName);
+                  setItemName('');
+                  handleClose();
+                }}
+                startIcon={<AddIcon />}
+              >
+                Add
+              </Button>
+            </Stack>
+          </Box>
+        </Modal>
       </Box>
     </ThemeProvider>
   );
