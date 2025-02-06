@@ -9,7 +9,7 @@ import '@fontsource/poppins';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import SearchIcon from '@mui/icons-material/Search';
-import ClientOnlyComponent from './ClientOnlyComponent';
+import ClientOnlyComponent from '../components/ClientOnlyComponent';
 
 const theme = createTheme({
   palette: {
