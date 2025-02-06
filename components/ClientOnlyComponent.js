@@ -1,23 +1,25 @@
-
+// ClientOnlyComponent.js
 'use client';
-import { useEffect, useState } from 'react';
+import useIsBrowser from './useIsBrowser';
 
 const ClientOnlyComponent = () => {
-  const [isBrowser, setIsBrowser] = useState(false);
-
-  useEffect(() => {
-    setIsBrowser(true);
-  }, []);
+  const isBrowser = useIsBrowser();
 
   if (!isBrowser) {
-    return null; // or a loading indicator
+    return <div>Loading...</div>; // or a spinner component
   }
 
-  return (
-    <div>
-      {/* Browser-dependent code here */}
-    </div>
-  );
+  try {
+    return (
+      <div>
+        <h1>This component only runs in the browser!</h1>
+        <p>You can safely use browser APIs here.</p>
+      </div>
+    );
+  } catch (error) {
+    console.error('Error in ClientOnlyComponent:', error);
+    return <div>Something went wrong.</div>;
+  }
 };
 
 export default ClientOnlyComponent;
