@@ -1,3 +1,5 @@
+// Home.js
+'use client';
 import { useState, useEffect } from 'react';
 import { Box, Modal, Typography, Stack, TextField, Button, Grid, CircularProgress } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
@@ -7,6 +9,7 @@ import '@fontsource/poppins';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import SearchIcon from '@mui/icons-material/Search';
+import ClientOnlyComponent from './ClientOnlyComponent';
 
 const theme = createTheme({
   palette: {
@@ -69,6 +72,65 @@ export default function Home() {
       setLoading(false);
     }
   };
+
+  const addItem = async (item) => {
+    try {
+      const docRef = doc(collection(firestore, 'inventory'), item);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const { quantity } = docSnap.data();
+        await setDoc(docRef, { quantity: quantity + 1 });
+      } else {
+        await setDoc(docRef, { quantity: 1 });
+      }
+      await updateInventory();
+    } catch (error) {
+      console.error("Failed to add item:", error);
+    }
+  };
+
+  const removeItem = async (item) => {
+    try {
+      const docRef = doc(collection(firestore, 'inventory'), item);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const { quantity } = docSnap.data();
+        if (quantity === 1) {
+          await deleteDoc(docRef);
+        } else {
+          await setDoc(docRef, { quantity: quantity - 1 });
+        }
+      }
+      await updateInventory();
+    } catch (error) {
+      console.error("Failed to remove item:", error);
+    }
+  };
+
+  const increaseQuantity = async (item) => {
+    try {
+      const docRef = doc(collection(firestore, 'inventory'), item);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const { quantity } = docSnap.data();
+        await setDoc(docRef, { quantity: quantity + 1 });
+      }
+      await updateInventory();
+    } catch (error) {
+      console.error("Failed to increase quantity:", error);
+    }
+  };
+
+  useEffect(() => {
+    const lowercasedFilter = searchQuery.toLowerCase();
+    const filteredData = inventory.filter(item =>
+      item.name.toLowerCase().includes(lowercasedFilter)
+    );
+    setFilteredInventory(filteredData);
+  }, [searchQuery, inventory]);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -194,46 +256,7 @@ export default function Home() {
             )}
           </Stack>
         </Box>
-        <Modal open={open} onClose={handleClose}>
-          <Box
-            position="absolute"
-            top="50%"
-            left="50%"
-            width={400}
-            bgcolor="white"
-            borderRadius={2}
-            boxShadow={24}
-            p={4}
-            display="flex"
-            flexDirection="column"
-            gap={3}
-            sx={{
-              transform: 'translate(-50%, -50%)',
-            }}
-          >
-            <Typography variant="h6">Add Item</Typography>
-            <Stack width="100%" direction="row" spacing={2}>
-              <TextField
-                variant="outlined"
-                fullWidth
-                placeholder="Enter item name"
-                value={itemName}
-                onChange={(e) => setItemName(e.target.value)}
-              />
-              <Button
-                variant="contained"
-                onClick={() => {
-                  addItem(itemName);
-                  setItemName('');
-                  handleClose();
-                }}
-                startIcon={<AddIcon />}
-              >
-                Add
-              </Button>
-            </Stack>
-          </Box>
-        </Modal>
+        <ClientOnlyComponent />
       </Box>
     </ThemeProvider>
   );
