@@ -1,8 +1,8 @@
-
-
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
-
+:root { --ink: #26312a; --muted: #6d756f; --cream: #f7f5ee; --line: #dedfd7; --green: #315d49; }
+* { box-sizing: border-box; padding: 0; margin: 0; }
+html { scroll-behavior: smooth; }
+body { color: var(--ink); background: var(--cream); }
+button, input, select { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+button { color: inherit; }
+a { color: inherit; text-decoration: none; }
